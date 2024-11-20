@@ -1,0 +1,144 @@
+# Overloads Policy
+- `byte` (required)
+- `char` (required)
+- `Rune` (required)
+- `U8String` (required)
+- `ReadOnlySpan<byte>` (required)
+- `ReadOnlySpan<char>` / `string` (optional)
+- `SearchValues<byte>` (optional)
+
+# Validation Policy
+- `ReadOnlySpan<byte>`: Always
+- `string` / `ReadOnlySpan<char>`: Never
+- `char` : Disallow surrogates
+- `byte`: Always
+- `Rune`: Never
+- `U8String`: Conditional, on manipulation
+
+# TODO
+- [ ] Globalization
+    - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
+    - [x] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers (see U8Abstractions, U8Comparison and U8CaseConversion)
+    - [x] ~~Map and allow explicit opt into using CultureInfo?~~ (comparer implementation-defined)
+    - [x] Finish implementing AsciiIgnoreCase comparer
+    - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
+- [x] IList, IEnumerable
+- [x] Format(InterpolatedU8StringHandler)
+- [ ] Construction
+    - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
+    - [ ] Create(in ReadOnlySequence<byte> sequence)
+    - [x] Create(interpolated string)
+- [x] Comparison
+    - [x] OrdinalComparer
+    - [x] ~~AsciiIgnoreCaseComparer~~
+    - [x] ~~OrdinalIgnoreCaseComparer~~
+    - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
+- [x] Runes view (IEnumerable, or stateful IList?)
+    - [ ] CopyTo(span)
+- [ ] U8Builder
+    - [ ] Special-case `Append(byte)` (do it for interpolated handlers too)
+- [x] RuneIndices / RuneOffsets / RunePositions (an advanced Runes view similar to https://github.com/dotnet/runtime/issues/28507)
+    - [ ] Likely projects to (Rune, int offset), but perhaps it's better to steal RunePosition (if yes, maybe just wrap U8Scalar?)
+- [x] Chars view (same as above)
+    - [x] CopyTo(span)
+    - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
+- [x] Lines view
+    - [x] CopyTo(span)
+- [ ] Splitting
+    - [x] CopyTo(span)
+    - [x] Split (byte, char, Rune)
+    - [x] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
+    - [ ] `SplitAny (byte, char, Rune, ROS, U8String, SearchValues<byte>, SearchValues<U8String>)`
+    - [x] `Split<T>, SplitAny<T> where T : IEqualityComparer<U8String>`
+    - [x] parametrized Split collections (all variants)
+    - [x] SplitFirst (byte, char, Rune, ROS, U8String)
+    - [x] SplitLast (byte, char, Rune, ROS, U8String)
+    - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~
+- [ ] Comparison
+    - [x] Contains (+`T where T : IU8Comparer`?)
+    - [x] StartsWith
+    - [x] EndsWith
+    - [x] Starts/EndsWith (+ `T where T : IU8Comparer`) overloads
+    - [x] IndexOf (+`T where T : IU8Comparer`?)
+    - [x] LastIndexOf (+`T where T : IU8Comparer`?)
+    - [x] Equals
+- [ ] Manipulation
+    - [x] Concat
+    - [x] Join
+    - [x] Trim, TrimStart, TrimEnd
+    - [x] TrimAscii, TrimStartAscii, TrimEndAscii
+    - [ ] Trim(value), TrimStart(value), TrimEnd(value) + comparer variants
+    - [x] Replace(byte)
+    - [x] Replace(...)
+    - [ ] Replace(..., T comparer)
+    - [ ] ReplaceAny
+    - [x] ReplaceLineEndings
+    - [x] Remove
+    - [ ] Remove(..., T comparer)
+    - [ ] RemoveAny(...)
+    - [x] Slice
+    - [x] SliceRounding
+    - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
+    - [x] ToLower/ToUpper (invariant case converter not implemented yet)
+    - [x] ToLowerAscii/ToUpperAscii
+- [ ] IO
+    - [ ] U8Reader
+        - [x] U8StreamSource, U8FileSource
+        - [ ] U8WebSocketSource, U8SocketSource
+        - [x] U8SplitReader, U8LineReader
+        - [ ] U8SegmentReader
+        - [ ] Refactor to consolidate/simplify handling the differences between file, stream and websocket handling
+    - [ ] HttpClient extensions
+        - [x] U8StringContent
+        - [x] GetU8String(Async)
+        - [ ] U8ServerSseItemReader? see https://github.com/dotnet/runtime/issues/98105
+- [ ] Memory-optimized collections
+    - [x] `U8SliceArray` or maybe `U8SplitArray`?
+    - [ ] `U8SliceDictionary<T>` (?)
+- [ ] Advanced text segmentation iterators (`U8.TextSegmentation` or just `U8.Text`?)
+    - [ ] `.Graphemes`
+    - [ ] `.Words`
+    - [ ] `.Sentences`
+- [ ] Consider `.Prelude` (or `.Syntax`) namespace/static class for shorthand declaration syntax through `uisng static` e.g. `STR("Hello, world!")`, `U8(nonConstant)`, `U8($"Today is {DateTime.Now}")`, etc. Extra style points for the API being offensive to Java devs.
+- [ ] Transcoding: UTF8<->UTF32
+- [x] TryCreate construction variants
+- [x] IsLatin/IsAlphanumeric?
+- [x] Construction aligned with collection literals initialization syntax and API shape (turned out to be quite useless)
+- [x] `IComparable<U8String>`, `IComparable<U8String?>`
+- [x] U8Marshal
+    - [x] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
+    - [x] ~~FromAsciiChars~~
+- [x] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
+- [x] U8Constants
+    - [x] (OS-specific) NewLine
+    - [x] (OS-specific) PathSeparator
+    - [x] ReplacementChar
+- [x] DebuggerViewProxy
+- [x] ~~Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really fragile to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.~~
+----------------
+- [ ] Extensions
+    - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
+    - [x] System.IO (File, anything else?)
+    - [x] Streams? Pipelines?
+        - [x] ~~U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.~~
+- [ ] Analyzers
+    - [ ] Do not compare U8String with string using `.Equals(object?)`
+    - [ ] `U8Reader` enumerable sources must be enumerated exactly once (not more, not less)
+        - [ ] Do not use `.Any()` on `U8Line/Split/SegmentReader`
+    - [ ] Suppress 'use slice operator' warning for select methods like `.SliceRounding(...)`
+    - [ ] Replace `.ElementAt`, `.Deconstruct`, etc. applied to splits with `SplitFirstLast` form
+    - [ ] Replace string literal comparison with a UTF-8 one
+    - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
+    - [ ] Consider deallocating NativeU8String allocated in the current scope with `using var ...`
+    - [ ] Call .Lines instead of .Split((byte)'\n')
+    - [ ] Pass large structs by in or ref / ref readonly (autofixer: mutable splits and enumerations by ref / ref readonly, readonly - by in)
+    - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call
+    - [ ] Warn on most common boxing operations (LINQ) -> replace with optimal method calls
+- [ ] Source Generators
+    - [ ] `[Display]` generator which auto-implements `IU8Formattable` (like for records)
+        - [ ] Auto-emit extension methods for records without the attr. into user-defined namespaces (or `U8`?)
+    - [x] Compile-time conversion of string literals (proof of concept done)
+        - [ ] Add install and uninstall scripts to add/remove to all projects (incl. interceptor toggle) in the solution (similar to OneOf?)
+        - [ ] Add error fixer "add `u8(...)` to string literal to fix this error"
+    - [ ] Compile-time UTF-8 validation for u8 literals and replacing the calls with unchecked variants
+    - [ ] Switch map trie generator to work around C# limitations

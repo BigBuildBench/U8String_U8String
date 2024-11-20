@@ -1,0 +1,50 @@
+name: tests-extra
+
+on:
+  push:
+    paths-ignore:
+    - '**.md'
+    - 'bench/**'
+    - '.github/workflows/dotnet-releaser.yml'
+  pull_request:
+
+jobs:
+  tests-extra:
+    name: tests-extra on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 8.0.x
+          include-prerelease: true
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Test Debug
+        run: dotnet test --no-restore
+        env:
+          DOTNET_EnableAVX512F: 1
+
+      # - name: Setup .NET for x86
+      #   if: matrix.os == 'windows-latest'
+      #   run: |
+      #     Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -O dotnet-install.ps1
+      #     .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -Quality ga
+      #   shell: pwsh
+
+      # - name: Test Release x86
+      #   if: matrix.os == 'windows-latest'
+      #   run: dotnet test -c Release -a x86
+
+      - name: Test Release
+        run: dotnet test -c Release --no-restore
+        env:
+          DOTNET_EnableAVX512F: 1

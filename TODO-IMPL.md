@@ -1,0 +1,126 @@
+# TODO
+- [ ] Contribute https://github.com/dotnet/csharplang/issues/6161 specification work
+- [ ] Contribute ArraySortHelper.cs optimizations to make it able specialize on struct TComparers
+- [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime if applicable
+- [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
+- [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
+- [ ] Contribute optimized versions of span enumerators
+- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs
+- [ ] Contribute various `ArrayBufferWriter<T>` optimizations - it is kind of underwhelming
+- [ ] Contributed `DefaultInterpolatedStringHandler` optimizations, maybe interpolated handler API for Console.Write and .WriteLine?
+- [ ] Contribute optimized `File.InternalReadAllLinesAsync` and adjacent methods?
+scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
+    - [ ] Invariant
+    - [ ] Ordinal + .Utf8 (Ordinal.Utf8.cs)
+    - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
+    - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
+- [x] Refactor literal formatting to not use Try... pattern which causes degenerate codegen where compiler can't elide the address-taken status of returned value
+- [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
+    - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
+    - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] This is stupid but replace all IsAscii-like checks with bespoke `value <= 0x7F` as it seems to significantly impact inlining decisions in some cases (and submit an issue with a simple repro)
+- [ ] Review splitting api to further facilitate getting first 1-5 elements with throwing/non-throwing behavior in a way that is both fast/compiler-friendly and does not involve duplicating even more splitting code (e.g. get first 3 elements with the third collecting the remainder of the split)
+    - [ ] Add missing `Split(...).CopyTo(dest, count)` overloads (or `Split(..., count)` shorthand form (throwing?))
+- [ ] Implement validate+copy, validate+scan and validate+copy+scan paths for efficient construction for the variety of use cases (the last one especially spends more CPU and bandwidth than necessary for consuming null-terimated C strings)
+- [ ] Reconsider the use of `U8Pattern` abstraction to generalize and coalesce all the IndexOf(Any) codepaths. Maybe `Patern<Kind>`?
+    - [ ] Interceptor-friendly form with lowering of static lambdas to specialized stubs?
+- [ ] Reconsider the decision regarding not introducing `U8Span` - way too many intermediate cases where heap-allocated `U8String` is not required but `ReadOnlySpan<byte>` requires unnecessary re-validations
+- [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
+- [ ] Consider reimplementing a small part of PAL and skipping CoreLib IO APIs to reduce the overhead
+- [ ] Configure/fix CI/CD to 1. properly recognize commit message prefixes when building release notes by integrating 'git-cliff', 2. properly package the nuget packages and 3. use better integrated warning/coverage reporting
+- [ ] Add copyright header to all files
+- [ ] Consider Bake/Inline compile-time extensions for F# which to allow folded validation or conversion
+- [x] Consider exposing public API for cached formatting of enum member values that reuses current interpolation logic (U8Enum?)
+- [ ] Drop stuct records in favour of implementing the rest of behavior manually as it is more trim-friendly
+- [x] Add empty array readonly static - `[]` creates a cctor check on NativeAOT 😢
+- [ ] Do an optimization pass for comparer-based `SplitFirst/Last` overloads targeted at reducing IL churn
+- [ ] Add SourceLink support
+- [ ] CliWrap or a similar form of integration, package for Pipelines?
+- [ ] Investigate if there is GC pause time impact from dependent handles that track objects in Non-GC heaps (e.g. literal pools)
+- [ ] Audit collections dispatch specializations for `.Concat`, `.Join` and the like to minimize duplicate checks
+- [ ] Audit the uses of `MethodImplOptions.AggressiveInlining` on methods which accept u8 literals and use `ValidatePossibleConstant`; review the conditions under which the methods get inlined on passing a constant without the attribute and stay not inlined when the validation cannot be optimized away
+- [ ] Move back UTF-8 validation from CoreLib to local polyfill and optimize calling convention to prevent codegen bloat
+- [x] Consider authoring namespaces and renaming `U8Primitives` to just `U8`
+- [ ] Consider replacing U8SplitOptions enum with a generic argument to make make it zero-cost
+- [ ] Resolve the mess with suppressions list
+- [x] ~~Consider implementing surrogate-tolerant Concat and Join on `IEnumerable<char>`~~ replaced with surrogate-intolerant implementation which is consistent with CoreLib behavior
+- [ ] Consider further specializing/refactoring inline conversion of chars and Runes and having bespoke U8Scalar2, 3 and 4 and delegating lookup to them?
+- [ ] Consider authoring certain methods with platform ABI differences in mind (tactical use of `in` and `ref` may needed for methods that have 2+ U8String arguments)
+- [ ] Implement Unicode normalization (review utf8proc and unilib and then write C#-optimized version)
+- [ ] Implement `SearchValues<U8String>` (constructible from `ROS<byte[]>`? need to consider u8 semantics and collection literals)
+- [ ] Consider moving some logic off U8String entirely to extension methods for tuning ABI cost and preventing spilling/address-taken locals
+- [ ] Reconsider `U8String.Optimization` name, consider splitting into `Optimization` and `Analysis` packages
+- [ ] Split off `U8String.Optimization` tests to a separate GH action and only run on specific triggers
+- [ ] Consider contributing proposal for `Utf8.IsNormalized(NormalizationForm, src)` and `Utf8.Normalize(NormalizationForm, src, dst)` to dotnet/runtime (rationale: CoreLib has rich adapted to platforms interop for globalization that uses ICU or NLS, both of which usually offer UTF-8 alternatives, therefore exposing UTF-8 normalization is effectively "free" compared to the alternative of requiring the users to either reimplement it or to bring non-C# dependencies that do so)
+- [ ] Consider Rust-like U8Searcher (or IU8Searcher) abstraction (or just U8SearchValuesSplit for now). This is to stop duplicating splitting code, because adding another split type impl. seems a bit too much
+    - [ ] `U8Searcher<T>` where T is byte or char or Rune
+    - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
+- [ ] Audit all methods that accept `string?` or `ROS<char>` and ensure they throw `FormatException` on torn surrogates
+    - [ ] Add `CreateLossy` variants that replaces broken sequences with replacement chars
+- [ ] Consider implementing a proper full U8ScalarInfo lookup table and replace branch-based whitespace and other similar checks with it
+- [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
+- [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
+- [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
+- [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
+- [x] Consider bringing back some of the checked CopyTo for inputs that might be changed concurrently
+- [ ] Setup self-hosted or paid runner for ARM64
+- [ ] Setup continuous benchmarking pipeline (should I just pay for good runners? self-host?)
+- [ ] Align (to 16B boundary) large inputs in vectorized methods
+- [ ] Use interceptors to perform additional compile-time work upfront
+    - [x] ~~Investigate if interception of operator and constructor calls is possible~~
+    - [ ] Lower `U8String.Create("string literal"u8)`, `new(...)` and `cns.ToU8String()` (incl. non-utf8 forms) to `U8Marshal.Create(cns_byteLiteral, 0, length)`
+    - [ ] Instead of intercepting just the conversions, consider intercepting the methods containing the conversions instead
+- [ ] Consider throwing not supported on `.Reset()` in all enumerator implementations to not lock the implementations out of future optimizations
+- [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
+- [x] Optimize .Replace methods
+- [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0
+- [x] ~~Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search~~ surrogate UTF-16 chars are unrepresentable in UTF-8
+- [x] ~~Use https://developer.arm.com/documentation/ddi0596/2020-12/SIMD-FP-Instructions/TBX--Table-vector-lookup-extension- to speed-up case conversions~~ Out of scope for 1.0.0
+- [x] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
+- [x] Choose scope for 1.0.0 release - there is simply too much to do
+- [x] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
+- [x] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
+- [x] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate
+- [x] Reconsider the choice to scan split sequences for the element count when separator is more than 1 byte long when materializing to `List<U8String>` - maybe it's a better trade-off to just keep growing the list allowing it to re-allocate? Might be fixed with InlineArray builder too
+- [x] ~~Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459~~ It sadly does not fit very well for byte range insertions, so use a more traditional array builder approach
+- [x] Argument validation consistency:
+    - [x] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
+    - [x] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
+- [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
+- [x] Refactor internal extensions and helper methods into separate classes
+- [x] ~~Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable~~
+- [x] Refactor and generalize large chunks into separate utility classes
+- [ ] Optimize Split(..., U8SplitOptions)
+- [ ] Consider exposing a configuration aid to address issues with System.Text.Json defaults for encoding non-ASCII characters 
+- [x] Consider alternate eagerly-evaluated Split consisting of (byte[] source, U8Range[] offsets). Conclusion: no, but optimize CopyTo()
+- [x] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs) Solution: not worth, focus on `ROS<byte>` as much as possible with `NativeU8String` and `NativeU8String<TAlloc>`(?) as alternatives
+- [x] Optimize `Split(...).ToArray()` path - right now it loses to string.Split quite a bit on short lengths
+- [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
+- [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
+- [x] Ensure `default(U8String)` is always valid
+- [x] Decide how to guard (or declare UB) methods that accept chars against surrogates
+- [ ] Author exception types and messages for malformed UTF-8 (use FormatException or U8FormatException?)
+- [ ] Author documentation
+- [x] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
+- [x] ~~Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods~~ Focus on an analyzer that would nudge the users to use proper u8 literals
+- [x] Optimize AsSpan() overloads
+- [x] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do. Done: now non-ascii chars are simply ignored
+- [x] Debugger View and ToString
+- [x] Complete Rune counting vectorization
+- [ ] Invalid sequences sanitization (specifically to remove invalid sequences, non-owned zero space joiners, etc. to interfere with popular utf8 text fingerprinting techniques)
+    - [ ] ~~Replace invalid~~ Use `CreateLossy` because U8String having invalid sequences is undefined behavior
+    - [ ] Trim invalid (and count?)
+- [x] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
+- [x] IList<byte>
+- [x] Equality
+- [x] Replace checked slicing with unchecked once implemented where applicable
+- [x] JsonConverter
+- [x] Consider whether Char8-like byte represntation is needed. Solution: not needed, use Rune and Char views.
+- [x] ~~(torture)~~ Utf8 Validation. Solved by https://github.com/dotnet/runtime/issues/502
+- [x] Utf8 code-point aware indexing. 
+- [x] Reconsider .Unsafe namespace for U8Marshal since some methods are unsafe but .Create(byte[]) simply skips validation
+- [x] Investigate why `Unsafe.As` breaks accessing `InnerOffsets` but `Unsafe.BitCast` doesn't + track https://github.com/dotnet/runtime/pull/85562
+
+# References
+https://github.com/dotnet/runtime/blob/4f9ae42d861fcb4be2fcd5d3d55d5f227d30e723/src/coreclr/src/System.Private.CoreLib/src/System/Utf8String.cs

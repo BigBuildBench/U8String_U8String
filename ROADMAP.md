@@ -1,0 +1,50 @@
+## 1.0.0
+- [x] U8Abstractions (definition)
+    - [x] Comparison
+    - [x] Case conversion
+    - [x] Splitting
+    - [x] Enumeration
+    - [x] Allocation (internal, not for 1.0.0)
+- [ ] U8String
+    - [x] CoreLib `string` non-globalization features parity
+        - [x] Split
+        - [x] Slice
+        - [x] Replace, Remove
+        - [x] Enumerations
+        - [x] Conversions
+        - [x] Concat, Join
+        - [x] Comparison, Equality and Hashcode
+        - [x] Format
+        - [x] Trim
+        - [x] etc.
+    - [x] Comparison
+        - [x] Ordinal
+        - [x] AsciiIgnoreCase
+        - [x] ~~OrdinalIgnoreCase~~
+        - [x] ~~FallbackInvariant~~
+        - [x] ~~FallbackInvariantIgnoreCase (?)~~
+    - [x] Case conversion
+        - [x] Ascii
+        - [x] ~~FallbackInvariant~~
+    - [x] Unsafe (U8Marshal)
+- [ ] Extensions
+    - [x] HttpClient (basic variants)
+    - [x] ~~Stream~~ and SafeHandle (basic variants)
+    - [ ] Console (?)
+- [x] U8Info, U8Scalar
+
+## 1.1.0
+- [ ] ICU/NLS-dependent features
+    - [ ] U8OrdinalIgnoreCaseComparer
+    - [ ] U8OrdinalCaseConverter
+    - [ ] U8InvariantCaseConverter
+    - [ ] IsNormalized/Normalize(NormalizationForm)
+- [ ] NativeU8String (1.X.X candidate?)
+    - [ ] NativeU8Span (?)
+- [ ] `SearchValues<U8String>` + method overloads that accept it
+- [ ] Stream enhancements (bespoke validating stream reader?)
+    - [ ] ReadLine/Async
+- [ ] Extending existing methods
+    - [ ] Replace(..., T comparer), ReplaceAny (both variants)
+    - [ ] Remove(..., T comparer), RemoveAny (both variants)
+    - [ ] SplitAny(..., T comparer)

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Authors>neon-sunset</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/U8String/U8String</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/U8String/U8String</PackageProjectUrl>
+    <PackageTags>Utf8;Utf8String;UTF-8;Unicode;String;U8String;SourceGen;CodeAnalysis</PackageTags>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>[work-in-progress] This is a supplementary package that provides code analysis and optimizations to improve the experience of using U8String in your projects.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>12</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU5128;IDE0046</NoWarn>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="U8String.Optimization.targets" Pack="true" PackagePath="build/" />
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)/README.md" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)../../logo.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>
